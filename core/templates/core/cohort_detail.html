@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Cohort {{ cohort.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between mb-3">
+    <h1>{{ cohort.name }}</h1>
+    {% if can_manage %}
+      <a href="{% url 'core:cohort-update' cohort.pk %}" class="btn btn-secondary">Edit</a>
+    {% endif %}
+  </div>
+  <dl class="row">
+    <dt class="col-sm-3">Code</dt>
+    <dd class="col-sm-9">{{ cohort.code }}</dd>
+    <dt class="col-sm-3">Department</dt>
+    <dd class="col-sm-9">{{ cohort.department }}</dd>
+    <dt class="col-sm-3">Program</dt>
+    <dd class="col-sm-9">{{ cohort.program }}</dd>
+    <dt class="col-sm-3">Academic Year</dt>
+    <dd class="col-sm-9">{{ cohort.academic_year }}</dd>
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">{{ cohort.status }}</dd>
+    <dt class="col-sm-3">Faculty Coordinator</dt>
+    <dd class="col-sm-9">{{ cohort.faculty_coordinator }}</dd>
+    <dt class="col-sm-3">Student Coordinators</dt>
+    <dd class="col-sm-9">
+      {% for coordinator in student_coordinators %}
+        {{ coordinator }}{% if not forloop.last %}, {% endif %}
+      {% empty %}
+        None
+      {% endfor %}
+    </dd>
+    <dt class="col-sm-3">Students</dt>
+    <dd class="col-sm-9">
+      {% for student in students %}
+        {{ student }}{% if not forloop.last %}, {% endif %}
+      {% empty %}
+        None
+      {% endfor %}
+    </dd>
+  </dl>
+  <hr>
+  <h3>Assessments</h3>
+  <div class="list-group">
+    {% for assessment in assessments %}
+      <a href="{% url 'core:assessment-detail' assessment.pk %}" class="list-group-item list-group-item-action">
+        <strong>{{ assessment.title }}</strong> — {{ assessment.status }}
+      </a>
+    {% empty %}
+      <div class="alert alert-info">No assessments for this cohort yet.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

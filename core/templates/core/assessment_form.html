@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ view.title }} Assessment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>{{ view.title }} Assessment</h1>
+  {% if locked %}
+    <div class="alert alert-warning">
+      This assessment already has attempts, so its questions, marks, and schedule are frozen.
+      Only status and release timing can be changed here.
+    </div>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary mt-2">Save Changes</button>
+    </form>
+  {% else %}
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-lg-8">
+          {{ form.title.label_tag }}
+          {{ form.title }}
+          {{ form.description.label_tag }}
+          {{ form.description }}
+          {{ form.instructions.label_tag }}
+          {{ form.instructions }}
+          {{ form.cohort.label_tag }}
+          {{ form.cohort }}
+          <div class="row g-3">
+            <div class="col-md-6">
+              {{ form.start_datetime.label_tag }}
+              {{ form.start_datetime }}
+            </div>
+            <div class="col-md-6">
+              {{ form.end_datetime.label_tag }}
+              {{ form.end_datetime }}
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          {{ form.duration_minutes.label_tag }}
+          {{ form.duration_minutes }}
+          {{ form.max_attempts.label_tag }}
+          {{ form.max_attempts }}
+          {{ form.total_marks.label_tag }}
+          {{ form.total_marks }}
+          {{ form.pass_mark.label_tag }}
+          {{ form.pass_mark }}
+          {{ form.randomize_question_order.label_tag }}
+          {{ form.randomize_question_order }}
+          {{ form.result_release_policy.label_tag }}
+          {{ form.result_release_policy }}
+          {{ form.result_release_at.label_tag }}
+          {{ form.result_release_at }}
+          {{ form.explanation_release_policy.label_tag }}
+          {{ form.explanation_release_policy }}
+          {{ form.explanation_release_at.label_tag }}
+          {{ form.explanation_release_at }}
+          {{ form.status.label_tag }}
+          {{ form.status }}
+        </div>
+      </div>
+      <div class="mt-4">
+        <h3>Questions</h3>
+        {{ form.questions.label_tag }}
+        {{ form.questions }}
+        <small class="form-text text-muted">{{ form.questions.help_text }}</small>
+      </div>
+      <button type="submit" class="btn btn-primary mt-4">Save Assessment</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

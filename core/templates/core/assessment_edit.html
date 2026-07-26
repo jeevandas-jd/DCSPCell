@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Assessment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Edit Assessment</h1>
+  {% if locked %}
+    <div class="alert alert-warning">This assessment already has attempts, so its questions, marks, and schedule are frozen. Only status and release timing can be changed.</div>
+  {% else %}
+    <p class="text-muted">Update assessment details and assigned questions.</p>
+  {% endif %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+  </form>
+</div>
+{% endblock %}

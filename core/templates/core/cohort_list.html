@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Cohorts{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between mb-3">
+    <h1>Cohorts</h1>
+    {% if can_create %}
+      <a href="{% url 'core:cohort-create' %}" class="btn btn-primary">Create Cohort</a>
+    {% endif %}
+  </div>
+  <div class="list-group">
+    {% for cohort in cohorts %}
+      <a href="{% url 'core:cohort-detail' cohort.pk %}" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">{{ cohort.name }}</h5>
+          <small>{{ cohort.status }}</small>
+        </div>
+        <p class="mb-1">{{ cohort.code }} — {{ cohort.department }} / {{ cohort.program }}</p>
+      </a>
+    {% empty %}
+      <div class="alert alert-info">No cohorts available.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

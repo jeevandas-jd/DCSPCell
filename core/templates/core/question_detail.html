@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Question {{ question.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>{{ question.title }}</h1>
+  <div class="btn-group" role="group">
+    <a href="{% url 'core:question-update' question.pk %}" class="btn btn-outline-secondary">Edit Question</a>
+    <a href="{% url 'core:question-create' %}" class="btn btn-secondary">New Question</a>
+  </div>
+</div>
+<div class="card">
+  <div class="card-body">
+    <p><strong>Type:</strong> {{ question.question_type }}</p>
+    <p><strong>Topic:</strong> {{ question.topic }}</p>
+    <p><strong>Difficulty:</strong> {{ question.difficulty }}</p>
+    <p><strong>Tags:</strong> {{ question.tags|join:", " }}</p>
+    <p><strong>Approval Status:</strong> {{ question.approval_status }}</p>
+    <hr>
+    <div>{{ question.statement|linebreaks }}</div>
+    {% if question.question_type == 'coding' %}
+      <hr>
+      <h5>Coding Details</h5>
+      <p><strong>Input Format:</strong> {{ question.input_format|default:'N/A' }}</p>
+      <p><strong>Output Format:</strong> {{ question.output_format|default:'N/A' }}</p>
+      <p><strong>Constraints:</strong> {{ question.constraints|default:'N/A' }}</p>
+      <p><strong>Example:</strong> {{ question.example|default:'N/A' }}</p>
+      <p><strong>Supported Languages:</strong> {{ question.supported_languages|join:", " }}</p>
+    {% endif %}
+    {% if choices %}
+      <hr>
+      <h5>Choices</h5>
+      <ul>
+        {% for choice in choices %}
+          <li>{{ choice.text }}{% if choice.is_correct %} (correct){% endif %}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% if coding_test_cases %}
+      <hr>
+      <h5>Coding Test Cases</h5>
+      <ul>
+        {% for case in coding_test_cases %}
+          <li>Input: {{ case.input_data }} | Expected: {{ case.expected_output }} | Points: {{ case.points }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% if question.explanation %}
+      <hr>
+      <h5>Explanation</h5>
+      <div>{{ question.explanation|linebreaks }}</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

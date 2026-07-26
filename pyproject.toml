@@ -1,0 +1,44 @@
+[project]
+name = "placeprep"
+version = "0.1.0"
+description = "Placement training platform for cohort-based aptitude and coding assessments."
+readme = "PLACEMENT_TRAINING_PLATFORM_COPILOT.md"
+requires-python = ">=3.12"
+dependencies = [
+  "Django>=5.0,<6.0",
+  "djangorestframework>=3.15",
+  "psycopg[binary]>=3.0",
+  "celery[redis]>=5.5",
+  "redis>=5.0",
+  "python-dotenv>=1.0",
+  "whitenoise>=7.0",
+  "openpyxl>=3.0",
+  "weasyprint>=58.0"
+]
+
+[project.optional-dependencies]
+development = [
+  "black>=24.0",
+  "ruff>=0.0",
+  "mypy>=1.9",
+  "pytest>=8.0",
+  "pytest-django>=4.0",
+  "factory-boy>=3.0",
+  "playwright>=1.40"
+]
+
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+extend-select = ["E","F","W","C90"]
+
+[tool.isort]
+profile = "black"

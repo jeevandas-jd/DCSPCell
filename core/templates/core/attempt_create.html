@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Start Attempt{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Start Attempt</h1>
+  <div class="card mb-3">
+    <div class="card-body">
+      <p><strong>Assessment:</strong> {{ assessment.title }}</p>
+      <p><strong>Instruction:</strong> {{ assessment.instructions|linebreaks }}</p>
+      <p><strong>Allowed until:</strong> {{ assessment.end_datetime }}</p>
+      <p><strong>Attempts used:</strong> {{ attempts_count }} / {{ assessment.max_attempts }}</p>
+    </div>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">Begin Assessment</button>
+    <a href="{% url 'core:assessment-detail' assessment.pk %}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}

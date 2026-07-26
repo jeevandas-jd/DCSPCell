@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+
+# Environment
+.env
+.env.*
+
+# Django
+*.log
+staticfiles/
+media/
+*.sqlite3
+
+# VS Code
+.vscode/
+
+# Docker
+**/docker-compose.override.yml
+**/Dockerfile
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+*.pyo
+*~
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Pytest
+.cache/
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# IDEs
+.idea/
+*.swp

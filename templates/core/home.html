@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to PlacePrep Hub{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="display-4 mb-3">Welcome to PlacePrep Hub</h1>
+  <p class="lead mb-4">Manage cohorts, questions, assessments and student attempts from one centralized platform.</p>
+  <div class="d-flex justify-content-center gap-2 flex-wrap">
+    <a href="{% url 'core:dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+    <a href="{% url 'core:cohort-list' %}" class="btn btn-outline-primary btn-lg">Browse Cohorts</a>
+  </div>
+</div>
+<div class="row g-3 mt-4">
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Cohort Management</h5>
+        <p class="card-text">Create and manage cohorts, assign faculty coordinators, and track intake years.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Question Bank</h5>
+        <p class="card-text">Add coding, multiple choice, and short-answer questions for assessments.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Assessments</h5>
+        <p class="card-text">Schedule assessments, control passing criteria, and release results.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
