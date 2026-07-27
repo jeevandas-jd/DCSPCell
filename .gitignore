@@ -53,3 +53,8 @@ var/
 # IDEs
 .idea/
 *.swp
+
+# virtual environments
+
+.venv/
+.vnv
