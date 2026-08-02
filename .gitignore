@@ -58,3 +58,5 @@ var/
 
 .venv/
 .vnv
+core/templates/core/templates.zip
+templates/templates.zip
