@@ -7,7 +7,11 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
-from rest_framework import viewsets
+from rest_framework import permissions, viewsets
+
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status as http_status
 
 from .forms import AssessmentForm, AssessmentStatusForm, CohortForm, QuestionForm
 from .models import (
@@ -20,9 +24,11 @@ from .models import (
     Cohort,
     Question,
     QuestionType,
+    User
 )
 from .permissions import (
     IsContentAuthor,
+    IsOwnAttemptOrPrivileged,
     can_approve_content,
     can_author_content,
     can_edit_assessment,
@@ -36,10 +42,18 @@ from .permissions import (
     manageable_cohorts,
     visible_cohorts,
 )
-from .serializers import AssessmentSerializer, AttemptSerializer, CohortSerializer, QuestionSerializer
+from .serializers import AssessmentSerializer, AttemptSerializer, CohortSerializer, QuestionSerializer,QuestionWriteSerializer
 from .services import evaluate_attempt, finalize_attempt
 
+from rest_framework import generics, permissions
+from .serializers import UserRegistrationSerializer
 
+class UserRegistrationView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserRegistrationSerializer
+    permission_classes = [permissions.AllowAny]
+
+    
 class AdminRequiredMixin:
     def dispatch(self, request, *args, **kwargs):
         if not is_admin(request.user):
@@ -167,6 +181,15 @@ class QuestionCreateView(LoginRequiredMixin, ContentAuthorRequiredMixin, CreateV
     template_name = 'core/question_form.html'
     success_url = reverse_lazy('core:question-list')
     extra_context = {'title': 'Create'}
+    # handle api/questions/create from postman, which doesn't use a form but still needs the user context for author and approval_status
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+    """
+    instructions for api testing
+    """ 
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -498,13 +521,20 @@ class CohortViewSet(viewsets.ReadOnlyModelViewSet):
         return visible_cohorts(self.request.user)
 
 
-class QuestionViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = QuestionSerializer
+class QuestionViewSet(viewsets.ModelViewSet):  # was ReadOnlyModelViewSet
     permission_classes = [IsContentAuthor]
 
     def get_queryset(self):
-        return Question.objects.filter(visible=True, approval_status=ApprovalStatus.APPROVED)
+        if can_approve_content(self.request.user):
+            return Question.objects.filter(is_archived=False)
+        return Question.objects.filter(is_archived=False).filter(
+            Q(visible=True, approval_status=ApprovalStatus.APPROVED) | Q(author=self.request.user)
+        )
 
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return QuestionWriteSerializer
+        return QuestionSerializer
 
 class AssessmentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AssessmentSerializer
@@ -514,12 +544,40 @@ class AssessmentViewSet(viewsets.ReadOnlyModelViewSet):
         return Assessment.objects.filter(cohort__in=visible_cohorts(self.request.user)).select_related('cohort')
 
 
-class AttemptViewSet(viewsets.ReadOnlyModelViewSet):
+
+class AttemptViewSet(viewsets.ModelViewSet):
     serializer_class = AttemptSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnAttemptOrPrivileged]
 
     def get_queryset(self):
         user = self.request.user
         qs = Attempt.objects.select_related('assessment', 'student')
-        if is_admin(user):
-            return qs
-        return qs.filter(student=user)
+        return qs if is_admin(user) else qs.filter(student=user)
+
+    @action(detail=True, methods=['post'], url_path='answers/(?P<aq_id>[^/.]+)')
+    def submit_answer(self, request, pk=None, aq_id=None):
+        attempt = self.get_object()  # runs IsOwnAttemptOrPrivileged
+        if attempt.student_id != request.user.id:
+            return Response({'detail': 'Not your attempt.'}, status=http_status.HTTP_403_FORBIDDEN)
+        if attempt.is_expired:
+            finalize_attempt(attempt, auto=True)
+            return Response({'detail': 'Time expired; attempt auto-submitted.'}, status=http_status.HTTP_409_CONFLICT)
+        if attempt.status != AttemptStatus.IN_PROGRESS:
+            return Response({'detail': 'Attempt already submitted.'}, status=http_status.HTTP_409_CONFLICT)
+
+        aq = get_object_or_404(attempt.assessment.assessment_questions, pk=aq_id)
+        answer, _ = Answer.objects.get_or_create(attempt=attempt, assessment_question=aq)
+
+        serializer = AnswerSubmitSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(answer=answer, question=aq.question)
+        return Response(AnswerSerializer(answer).data)
+
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        attempt = self.get_object()
+        if attempt.student_id != request.user.id:
+            return Response({'detail': 'Not your attempt.'}, status=http_status.HTTP_403_FORBIDDEN)
+        if attempt.status == AttemptStatus.IN_PROGRESS:
+            finalize_attempt(attempt, auto=False)
+        return Response(AttemptSerializer(attempt).data)

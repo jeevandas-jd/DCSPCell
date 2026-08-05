@@ -26,6 +26,7 @@ from .views import (
     QuestionListView,
     QuestionUpdateView,
     QuestionViewSet,
+    UserRegistrationView,
 )
 
 app_name = 'core'
@@ -38,7 +39,6 @@ router.register(r'cohorts', CohortViewSet, basename='api-cohort')
 router.register(r'questions', QuestionViewSet, basename='api-question')
 router.register(r'assessments', AssessmentViewSet, basename='api-assessment')
 router.register(r'attempts', AttemptViewSet, basename='api-attempt')
-
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
@@ -60,5 +60,6 @@ urlpatterns = [
     path('attempts/<int:pk>/submit/', AttemptSubmitView.as_view(), name='attempt-submit'),
     path('attempts/<int:pk>/grade/', AttemptGradeView.as_view(), name='attempt-grade'),
     path('attempts/<int:pk>/questions/<int:aq_id>/save/', AnswerSaveView.as_view(), name='answer-save'),
+    path('api/register/', UserRegistrationView.as_view(), name='api-user-register'),
     path('api/', include(router.urls)),
 ]
