@@ -38,7 +38,18 @@ from .models import (
     Cohort, Question, QuestionType, User,
 )
 
-
+class CohortWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cohort
+        fields = [
+            'id', 'name', 'code', 'department', 'program', 'admission_year',
+            'graduation_year', 'section', 'academic_year', 'start_date', 'end_date',
+            'status', 'faculty_coordinator', 'student_coordinators',
+            'publishing_coordinators', 'students',
+        ]
+        extra_kwargs = {
+            'id': {'read_only': True},
+        }
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
