@@ -116,3 +116,48 @@ def manageable_cohorts(user):
 class IsContentAuthor(BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and can_author_content(request.user))
+
+
+    
+class IsCohortMember(BasePermission):
+    """Object-level: user can view this specific cohort."""
+    def has_object_permission(self, request, view, obj):
+        return can_view_cohort(request.user, obj)
+
+
+class CanManageCohort(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return can_manage_cohort(request.user, obj)
+
+
+class CanEditAssessment(BasePermission):
+    """Object-level: user can edit/publish this assessment."""
+    def has_object_permission(self, request, view, obj):
+        return can_edit_assessment(request.user, obj)
+
+
+class IsAssessmentViewer(BasePermission):
+    """Object-level: user can view this assessment (cohort access + status visibility)."""
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        if not can_view_cohort(user, obj.cohort):
+            return False
+        if not can_author_content(user) and obj.status in ['draft', 'pending', 'cancelled']:
+            return False
+        return True
+
+
+class IsOwnAttemptOrPrivileged(BasePermission):
+    """Object-level: user owns the attempt, or is admin/faculty of its cohort."""
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        return (
+            obj.student_id == user.id
+            or is_admin(user)
+            or is_faculty_of(user, obj.assessment.cohort)
+        )
+
+
+class CanGradeAttempt(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return is_admin(request.user) or is_faculty_of(request.user, obj.assessment.cohort)

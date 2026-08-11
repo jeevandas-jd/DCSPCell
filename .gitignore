@@ -53,3 +53,10 @@ var/
 # IDEs
 .idea/
 *.swp
+
+# virtual environments
+
+.venv/
+.vnv
+core/templates/core/templates.zip
+templates/templates.zip

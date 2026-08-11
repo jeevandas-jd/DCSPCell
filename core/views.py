@@ -7,7 +7,17 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
-from rest_framework import viewsets
+from rest_framework import permissions, viewsets
+
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status as http_status
+
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status as http_status, permissions
+
+
 
 from .forms import AssessmentForm, AssessmentStatusForm, CohortForm, QuestionForm
 from .models import (
@@ -20,9 +30,11 @@ from .models import (
     Cohort,
     Question,
     QuestionType,
+    User
 )
 from .permissions import (
     IsContentAuthor,
+    IsOwnAttemptOrPrivileged,
     can_approve_content,
     can_author_content,
     can_edit_assessment,
@@ -35,11 +47,20 @@ from .permissions import (
     is_member_of,
     manageable_cohorts,
     visible_cohorts,
+
 )
-from .serializers import AssessmentSerializer, AttemptSerializer, CohortSerializer, QuestionSerializer
+from .serializers import AssessmentSerializer, AttemptSerializer, CohortSerializer, QuestionSerializer,QuestionWriteSerializer,AnswerSubmitSerializer, AnswerSerializer
 from .services import evaluate_attempt, finalize_attempt
 
+from rest_framework import generics, permissions
+from .serializers import UserRegistrationSerializer
 
+class UserRegistrationView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserRegistrationSerializer
+    permission_classes = [permissions.AllowAny]
+
+    
 class AdminRequiredMixin:
     def dispatch(self, request, *args, **kwargs):
         if not is_admin(request.user):
@@ -167,6 +188,15 @@ class QuestionCreateView(LoginRequiredMixin, ContentAuthorRequiredMixin, CreateV
     template_name = 'core/question_form.html'
     success_url = reverse_lazy('core:question-list')
     extra_context = {'title': 'Create'}
+    # handle api/questions/create from postman, which doesn't use a form but still needs the user context for author and approval_status
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+    """
+    instructions for api testing
+    """ 
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -491,20 +521,71 @@ class AttemptGradeView(LoginRequiredMixin, View):
         return redirect('core:attempt-detail', pk=self.attempt.pk)
 
 
-class CohortViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = CohortSerializer
+from rest_framework import viewsets, permissions
+from rest_framework.response import Response
+from rest_framework import status as http_status
+
+from .models import Cohort, User
+from .serializers import CohortSerializer, CohortWriteSerializer, UserSerializer
+
+
+class CohortViewSet(viewsets.ModelViewSet):
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), permissions.IsAdminUser()]
+        return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         return visible_cohorts(self.request.user)
 
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return CohortWriteSerializer
+        return CohortSerializer
 
-class QuestionViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = QuestionSerializer
+    def _fields_help(self):
+        """Required-fields + available-users hint, shown when POST/PATCH body is empty."""
+        serializer = CohortWriteSerializer()
+        required_fields = [
+            name for name, field in serializer.fields.items() if field.required
+        ]
+        optional_fields = [
+            name for name, field in serializer.fields.items() if not field.required
+        ]
+        return {
+            'detail': 'No body provided. Submit a POST with these fields to create a cohort.',
+            'required_fields': required_fields,
+            'optional_fields': optional_fields,
+            'available_students': UserSerializer(
+                User.objects, many=True
+            ).data,
+        }
+
+    def create(self, request, *args, **kwargs):
+        if not request.data:
+            return Response(self._fields_help(), status=http_status.HTTP_200_OK)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if not request.data:
+            return Response(self._fields_help(), status=http_status.HTTP_200_OK)
+        return super().update(request, *args, **kwargs)
+
+class QuestionViewSet(viewsets.ModelViewSet):  # was ReadOnlyModelViewSet
     permission_classes = [IsContentAuthor]
 
     def get_queryset(self):
-        return Question.objects.filter(visible=True, approval_status=ApprovalStatus.APPROVED)
+        if can_approve_content(self.request.user):
+            return Question.objects.filter(is_archived=False)
+        return Question.objects.filter(is_archived=False).filter(
+            Q(visible=True, approval_status=ApprovalStatus.APPROVED) | Q(author=self.request.user)
+        )
 
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return QuestionWriteSerializer
+        return QuestionSerializer
 
 class AssessmentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AssessmentSerializer
@@ -514,12 +595,89 @@ class AssessmentViewSet(viewsets.ReadOnlyModelViewSet):
         return Assessment.objects.filter(cohort__in=visible_cohorts(self.request.user)).select_related('cohort')
 
 
-class AttemptViewSet(viewsets.ReadOnlyModelViewSet):
+
+
+
+class AttemptViewSet(viewsets.ModelViewSet):
     serializer_class = AttemptSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnAttemptOrPrivileged]
+    http_method_names = ['get', 'post', 'head', 'options']  # no PUT/PATCH/DELETE on attempts directly
 
     def get_queryset(self):
         user = self.request.user
         qs = Attempt.objects.select_related('assessment', 'student')
-        if is_admin(user):
-            return qs
-        return qs.filter(student=user)
+        return qs if is_admin(user) else qs.filter(student=user)
+
+    def create(self, request, *args, **kwargs):
+        """Mirrors AttemptCreateView.dispatch's checks exactly."""
+        assessment_id = request.data.get('assessment')
+        assessment = get_object_or_404(Assessment, pk=assessment_id)
+        user = request.user
+
+        if not is_member_of(user, assessment.cohort):
+            return Response({'detail': 'You are not part of the cohort for this assessment.'}, status=http_status.HTTP_403_FORBIDDEN)
+
+        now = timezone.now()
+        if assessment.status != AssessmentStatus.ACTIVE or not assessment.is_within_window(now):
+            return Response({'detail': 'This assessment is not currently active.'}, status=http_status.HTTP_403_FORBIDDEN)
+
+        existing = Attempt.objects.filter(student=user, assessment=assessment).count()
+        if existing >= (assessment.max_attempts or 1):
+            return Response({'detail': 'Maximum attempt limit reached.'}, status=http_status.HTTP_403_FORBIDDEN)
+
+        attempt = Attempt.objects.create(
+            assessment=assessment,
+            student=user,
+            attempt_number=existing + 1,
+        )
+        return Response(AttemptSerializer(attempt).data, status=http_status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='answers/(?P<aq_id>[^/.]+)')
+    def submit_answer(self, request, pk=None, aq_id=None):
+        attempt = self.get_object()
+        if attempt.student_id != request.user.id:
+            return Response({'detail': 'Not your attempt.'}, status=http_status.HTTP_403_FORBIDDEN)
+        if attempt.is_expired:
+            finalize_attempt(attempt, auto=True)
+            return Response({'detail': 'Time expired; attempt auto-submitted.'}, status=http_status.HTTP_409_CONFLICT)
+        if attempt.status != AttemptStatus.IN_PROGRESS:
+            return Response({'detail': 'Attempt already submitted.'}, status=http_status.HTTP_409_CONFLICT)
+
+        aq = get_object_or_404(attempt.assessment.assessment_questions, pk=aq_id)
+        answer, _ = Answer.objects.get_or_create(attempt=attempt, assessment_question=aq)
+
+        serializer = AnswerSubmitSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(answer=answer, question=aq.question)
+        return Response(AnswerSerializer(answer).data)
+
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        attempt = self.get_object()
+        if attempt.student_id != request.user.id:
+            return Response({'detail': 'Not your attempt.'}, status=http_status.HTTP_403_FORBIDDEN)
+        if attempt.status == AttemptStatus.IN_PROGRESS:
+            finalize_attempt(attempt, auto=False)
+        return Response(AttemptSerializer(attempt).data)
+
+    @action(detail=True, methods=['post'])
+    def grade(self, request, pk=None):
+        """Mirrors AttemptGradeView — faculty/admin only, coding-question manual grading."""
+        attempt = self.get_object()
+        user = request.user
+        if not (is_admin(user) or is_faculty_of(user, attempt.assessment.cohort)):
+            return Response({'detail': 'Only faculty or admins may grade attempts.'}, status=http_status.HTTP_403_FORBIDDEN)
+
+        grades = request.data.get('grades', [])  # [{"answer_id": 1, "marks": 2, "feedback": "..."}]
+        for entry in grades:
+            answer = get_object_or_404(Answer, pk=entry['answer_id'], attempt=attempt)
+            if answer.assessment_question.question.question_type != QuestionType.CODING:
+                continue
+            answer.awarded_marks = entry['marks']
+            answer.is_correct = entry['marks'] > 0
+            answer.feedback = entry.get('feedback', '')
+            answer.save(update_fields=['awarded_marks', 'is_correct', 'feedback'])
+
+        from .services import evaluate_attempt
+        evaluate_attempt(attempt)
+        return Response(AttemptSerializer(attempt).data)
