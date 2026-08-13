@@ -3,38 +3,47 @@
 {% block title %}Welcome to PlacePrep Hub{% endblock %}
 
 {% block content %}
-<div class="text-center py-5">
-  <h1 class="display-4 mb-3">Welcome to PlacePrep Hub</h1>
-  <p class="lead mb-4">Manage cohorts, questions, assessments and student attempts from one centralized platform.</p>
-  <div class="d-flex justify-content-center gap-2 flex-wrap">
-    <a href="{% url 'core:dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
-    <a href="{% url 'core:cohort-list' %}" class="btn btn-outline-primary btn-lg">Browse Cohorts</a>
-  </div>
+<div class="view-head" style="text-align:center;padding:40px 0 24px;">
+    <div class="view-eyebrow">Platform</div>
+    <h1 class="view-title" style="font-size:28px;margin-bottom:8px;">PlacePrep Hub</h1>
+    <p class="view-sub" style="font-size:15px;max-width:600px;margin:0 auto;">
+        Manage cohorts, questions, assessments and student attempts from one centralized platform.
+    </p>
+    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:20px;">
+        <a href="{% url 'core:dashboard' %}" class="btn btn-accent">Go to Dashboard</a>
+        <a href="{% url 'core:cohort-list' %}" class="btn btn-ghost">Browse Cohorts</a>
+    </div>
 </div>
-<div class="row g-3 mt-4">
-  <div class="col-md-4">
-    <div class="card h-100 shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">Cohort Management</h5>
-        <p class="card-text">Create and manage cohorts, assign faculty coordinators, and track intake years.</p>
-      </div>
+
+<div class="panel-row" style="margin-top:32px;">
+    <div class="panel">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            <span style="font-family:var(--mono);font-size:20px;color:var(--accent);">⌘</span>
+            <div class="panel-title" style="margin-bottom:0;">Cohort Management</div>
+        </div>
+        <p style="color:var(--text-dim);font-size:14px;margin:0;">
+            Create and manage cohorts, assign faculty coordinators, and track intake years.
+        </p>
     </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card h-100 shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">Question Bank</h5>
-        <p class="card-text">Add coding, multiple choice, and short-answer questions for assessments.</p>
-      </div>
+    
+    <div class="panel">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            <span style="font-family:var(--mono);font-size:20px;color:var(--blue);">▣</span>
+            <div class="panel-title" style="margin-bottom:0;">Question Bank</div>
+        </div>
+        <p style="color:var(--text-dim);font-size:14px;margin:0;">
+            Add coding, multiple choice, and short-answer questions for assessments.
+        </p>
     </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card h-100 shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">Assessments</h5>
-        <p class="card-text">Schedule assessments, control passing criteria, and release results.</p>
-      </div>
+    
+    <div class="panel">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            <span style="font-family:var(--mono);font-size:20px;color:var(--amber);">◈</span>
+            <div class="panel-title" style="margin-bottom:0;">Assessments</div>
+        </div>
+        <p style="color:var(--text-dim);font-size:14px;margin:0;">
+            Schedule assessments, control passing criteria, and release results.
+        </p>
     </div>
-  </div>
 </div>
 {% endblock %}

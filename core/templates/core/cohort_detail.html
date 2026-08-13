@@ -3,53 +3,114 @@
 {% block title %}Cohort {{ cohort.name }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <div class="d-flex justify-content-between mb-3">
-    <h1>{{ cohort.name }}</h1>
-    {% if can_manage %}
-      <a href="{% url 'core:cohort-update' cohort.pk %}" class="btn btn-secondary">Edit</a>
-    {% endif %}
-  </div>
-  <dl class="row">
-    <dt class="col-sm-3">Code</dt>
-    <dd class="col-sm-9">{{ cohort.code }}</dd>
-    <dt class="col-sm-3">Department</dt>
-    <dd class="col-sm-9">{{ cohort.department }}</dd>
-    <dt class="col-sm-3">Program</dt>
-    <dd class="col-sm-9">{{ cohort.program }}</dd>
-    <dt class="col-sm-3">Academic Year</dt>
-    <dd class="col-sm-9">{{ cohort.academic_year }}</dd>
-    <dt class="col-sm-3">Status</dt>
-    <dd class="col-sm-9">{{ cohort.status }}</dd>
-    <dt class="col-sm-3">Faculty Coordinator</dt>
-    <dd class="col-sm-9">{{ cohort.faculty_coordinator }}</dd>
-    <dt class="col-sm-3">Student Coordinators</dt>
-    <dd class="col-sm-9">
-      {% for coordinator in student_coordinators %}
-        {{ coordinator }}{% if not forloop.last %}, {% endif %}
-      {% empty %}
-        None
-      {% endfor %}
-    </dd>
-    <dt class="col-sm-3">Students</dt>
-    <dd class="col-sm-9">
-      {% for student in students %}
-        {{ student }}{% if not forloop.last %}, {% endif %}
-      {% empty %}
-        None
-      {% endfor %}
-    </dd>
-  </dl>
-  <hr>
-  <h3>Assessments</h3>
-  <div class="list-group">
-    {% for assessment in assessments %}
-      <a href="{% url 'core:assessment-detail' assessment.pk %}" class="list-group-item list-group-item-action">
-        <strong>{{ assessment.title }}</strong> — {{ assessment.status }}
-      </a>
-    {% empty %}
-      <div class="alert alert-info">No assessments for this cohort yet.</div>
-    {% endfor %}
-  </div>
+<div class="view-head">
+    <div class="view-eyebrow">Cohort</div>
+    <div class="toolbar" style="margin-bottom:0;">
+        <h1 class="view-title" style="margin-bottom:0;">{{ cohort.name }}</h1>
+        {% if can_manage %}
+            <a href="{% url 'core:cohort-update' cohort.pk %}" class="btn">Edit</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel" style="margin-bottom:22px;">
+    <div class="kv-grid">
+        <div>
+            <div class="kv-label">Code</div>
+            <div class="kv-value" style="font-family:var(--mono);">{{ cohort.code }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Department</div>
+            <div class="kv-value">{{ cohort.department }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Program</div>
+            <div class="kv-value">{{ cohort.program }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Academic year</div>
+            <div class="kv-value">{{ cohort.academic_year }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Status</div>
+            <div class="kv-value">
+                {% if cohort.status == 'active' %}
+                    <span class="pill pill-green">Active</span>
+                {% elif cohort.status == 'draft' %}
+                    <span class="pill pill-gray">Draft</span>
+                {% elif cohort.status == 'closed' %}
+                    <span class="pill pill-red">Closed</span>
+                {% else %}
+                    <span class="pill pill-gray">{{ cohort.status }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div class="kv-label">Faculty coordinator</div>
+            <div class="kv-value">{{ cohort.faculty_coordinator }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Student coordinators</div>
+            <div class="kv-value">
+                {% for coordinator in student_coordinators %}
+                    {{ coordinator }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    None
+                {% endfor %}
+            </div>
+        </div>
+        <div>
+            <div class="kv-label">Students</div>
+            <div class="kv-value">
+                {% for student in students %}
+                    {{ student }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    None
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel-title" style="margin-bottom:14px;">Assessments</div>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Assessment</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assessment in assessments %}
+            <tr class="clickable" data-href="{% url 'core:assessment-detail' assessment.pk %}">
+                <td><span class="cell-main">{{ assessment.title }}</span></td>
+                <td>
+                    {% if assessment.status == 'active' %}
+                        <span class="pill pill-green">Active</span>
+                    {% elif assessment.status == 'draft' %}
+                        <span class="pill pill-gray">Draft</span>
+                    {% elif assessment.status == 'closed' %}
+                        <span class="pill pill-red">Closed</span>
+                    {% elif assessment.status == 'ongoing' %}
+                        <span class="pill pill-blue">Ongoing</span>
+                    {% elif assessment.status == 'pending' %}
+                        <span class="pill pill-amber">Pending</span>
+                    {% else %}
+                        <span class="pill pill-gray">{{ assessment.status }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">
+                    <div class="empty-state">
+                        <p>No assessments for this cohort yet.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

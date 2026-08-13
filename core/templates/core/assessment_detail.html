@@ -3,42 +3,82 @@
 {% block title %}Assessment {{ assessment.title }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1>{{ assessment.title }}</h1>
-  <div class="btn-group" role="group">
-    {% if can_manage %}
-      <a href="{% url 'core:assessment-update' assessment.pk %}" class="btn btn-outline-secondary">Edit Assessment</a>
-      <a href="{% url 'core:assessment-create' %}" class="btn btn-secondary">New Assessment</a>
-    {% endif %}
-    {% if can_start_attempt %}
-      <a href="{% url 'core:assessment-start' assessment.pk %}" class="btn btn-primary">Start Assessment</a>
-    {% endif %}
-  </div>
+<div class="view-head">
+    <div class="view-eyebrow">Assessment</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+        <h1 class="view-title" style="margin-bottom:0;">{{ assessment.title }}</h1>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            {% if can_manage %}
+                <a href="{% url 'core:assessment-update' assessment.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+                <a href="{% url 'core:assessment-create' %}" class="btn btn-sm">New Assessment</a>
+            {% endif %}
+            {% if can_start_attempt %}
+                <a href="{% url 'core:assessment-start' assessment.pk %}" class="btn btn-accent btn-sm">Start Assessment</a>
+            {% endif %}
+        </div>
+    </div>
 </div>
-<div class="card mb-3">
-  <div class="card-body">
-    <p><strong>Cohort:</strong> {{ assessment.cohort.name }}</p>
-    <p><strong>Status:</strong> {{ assessment.status }}</p>
-    <p><strong>Window:</strong> {{ assessment.start_datetime }} to {{ assessment.end_datetime }}</p>
-    <p><strong>Duration:</strong> {{ assessment.duration_minutes }} minutes</p>
-    <hr>
-    <h5>Instructions</h5>
-    <p>{{ assessment.instructions|linebreaks }}</p>
-  </div>
+
+<div class="detail" style="margin-bottom:16px;">
+    <div class="kv-grid">
+        <div>
+            <div class="kv-label">Cohort</div>
+            <div class="kv-value">{{ assessment.cohort.name }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Status</div>
+            <div class="kv-value">
+                {% if assessment.status == 'active' %}
+                    <span class="pill pill-green">Active</span>
+                {% elif assessment.status == 'draft' %}
+                    <span class="pill pill-gray">Draft</span>
+                {% elif assessment.status == 'closed' %}
+                    <span class="pill pill-red">Closed</span>
+                {% elif assessment.status == 'ongoing' %}
+                    <span class="pill pill-blue">Ongoing</span>
+                {% else %}
+                    <span class="pill pill-gray">{{ assessment.status }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div class="kv-label">Window</div>
+            <div class="kv-value">{{ assessment.start_datetime }} to {{ assessment.end_datetime }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Duration</div>
+            <div class="kv-value">{{ assessment.duration_minutes }} minutes</div>
+        </div>
+    </div>
 </div>
-<div class="card">
-  <div class="card-body">
-    <h5>Questions</h5>
-    <ul class="list-group">
-      {% for aq in assessment.assessment_questions.all %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          <span>{{ aq.question.title }}</span>
-          <span class="badge bg-secondary">{{ aq.question.question_type }}</span>
-        </li>
-      {% empty %}
-        <li class="list-group-item">No questions added.</li>
-      {% endfor %}
-    </ul>
-  </div>
+
+<div class="panel" style="margin-bottom:16px;">
+    <div class="panel-title">Instructions</div>
+    <p style="color:var(--text);font-size:14px;line-height:1.7;margin:0;">
+        {{ assessment.instructions|linebreaks }}
+    </p>
+</div>
+
+<div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="panel-title" style="margin-bottom:0;">Questions</div>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">
+            {{ assessment.assessment_questions.all|length }} total
+        </span>
+    </div>
+    <div style="display:grid;gap:4px;">
+        {% for aq in assessment.assessment_questions.all %}
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:5px;background:var(--panel-alt);border:1px solid var(--border-soft);">
+                <span style="font-size:13px;color:var(--text);">{{ aq.question.title }}</span>
+                <span class="type-tag type-tag-{{ aq.question.question_type|upper }}">
+                    {{ aq.question.get_question_type_display|default:aq.question.question_type }}
+                </span>
+            </div>
+        {% empty %}
+            <div class="empty" style="padding:24px 0;">
+                <p>No questions added to this assessment</p>
+            </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

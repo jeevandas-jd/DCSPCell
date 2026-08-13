@@ -3,12 +3,16 @@
 {% block title %}{{ view.title }} Cohort{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h1>{{ view.title }} Cohort</h1>
-  <form method="post" novalidate>
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
+<div class="view-head">
+    <div class="view-eyebrow">Cohort</div>
+    <h1 class="view-title">{{ view.title }} cohort</h1>
+</div>
+
+<div class="panel" style="max-width:560px;">
+    <form method="post" novalidate class="form-block">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-accent">Save</button>
+    </form>
 </div>
 {% endblock %}

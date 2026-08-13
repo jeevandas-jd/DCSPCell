@@ -3,25 +3,58 @@
 {% block title %}Cohorts{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <div class="d-flex justify-content-between mb-3">
-    <h1>Cohorts</h1>
+<div class="view-head">
+    <div class="view-eyebrow">Groups</div>
+    <h1 class="view-title">Cohorts</h1>
+    <div class="view-sub">Students grouped with a faculty and student coordinator.</div>
+</div>
+
+<div class="toolbar">
+    <div></div>
     {% if can_create %}
-      <a href="{% url 'core:cohort-create' %}" class="btn btn-primary">Create Cohort</a>
+        <a href="{% url 'core:cohort-create' %}" class="btn btn-accent">Create cohort</a>
     {% endif %}
-  </div>
-  <div class="list-group">
-    {% for cohort in cohorts %}
-      <a href="{% url 'core:cohort-detail' cohort.pk %}" class="list-group-item list-group-item-action">
-        <div class="d-flex w-100 justify-content-between">
-          <h5 class="mb-1">{{ cohort.name }}</h5>
-          <small>{{ cohort.status }}</small>
-        </div>
-        <p class="mb-1">{{ cohort.code }} — {{ cohort.department }} / {{ cohort.program }}</p>
-      </a>
-    {% empty %}
-      <div class="alert alert-info">No cohorts available.</div>
-    {% endfor %}
-  </div>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Cohort</th>
+                <th>Program</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cohort in cohorts %}
+            <tr class="clickable" data-href="{% url 'core:cohort-detail' cohort.pk %}">
+                <td>
+                    <span class="cell-main">{{ cohort.name }}</span>
+                    <div class="cell-sub">{{ cohort.code }}</div>
+                </td>
+                <td>{{ cohort.department }} / {{ cohort.program }}</td>
+                <td>
+                    {% if cohort.status == 'active' %}
+                        <span class="pill pill-green">Active</span>
+                    {% elif cohort.status == 'draft' %}
+                        <span class="pill pill-gray">Draft</span>
+                    {% elif cohort.status == 'closed' %}
+                        <span class="pill pill-red">Closed</span>
+                    {% else %}
+                        <span class="pill pill-gray">{{ cohort.status }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">
+                    <div class="empty-state">
+                        <p>No cohorts available.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

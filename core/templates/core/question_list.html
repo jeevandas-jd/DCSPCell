@@ -3,21 +3,69 @@
 {% block title %}Questions{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1>Questions</h1>
-  <a href="{% url 'core:question-create' %}" class="btn btn-primary">Create Question</a>
+<div class="view-head">
+    <div class="view-eyebrow">Content</div>
+    <h1 class="view-title">Question bank</h1>
+    <div class="view-sub">Objective questions auto-grade on submit; coding questions queue for manual review.</div>
 </div>
-<div class="list-group">
-  {% for question in questions %}
-    <a href="{% url 'core:question-detail' question.pk %}" class="list-group-item list-group-item-action">
-      <div class="d-flex w-100 justify-content-between">
-        <h5 class="mb-1">{{ question.title }}</h5>
-        <small>{{ question.question_type }}</small>
-      </div>
-      <p class="mb-1">{{ question.topic }} / {{ question.difficulty }}</p>
-    </a>
-  {% empty %}
-    <div class="alert alert-info">No questions available.</div>
-  {% endfor %}
+
+<div class="toolbar">
+    <div></div>
+    <a href="{% url 'core:question-create' %}" class="btn btn-accent">Create question</a>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Question</th>
+                <th>Topic</th>
+                <th>Difficulty</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for question in questions %}
+            <tr class="clickable" data-href="{% url 'core:question-detail' question.pk %}">
+                <td><span class="cell-main">{{ question.title }}</span></td>
+                <td>{{ question.topic }}</td>
+                <td>
+                    {% if question.difficulty == 'easy' %}
+                        <span class="pill pill-green">Easy</span>
+                    {% elif question.difficulty == 'medium' %}
+                        <span class="pill pill-amber">Medium</span>
+                    {% elif question.difficulty == 'hard' %}
+                        <span class="pill pill-red">Hard</span>
+                    {% else %}
+                        <span class="pill pill-gray">{{ question.difficulty }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if question.question_type == 'coding' %}
+                        <span class="type-tag type-CODING">Coding</span>
+                    {% elif question.question_type == 'single_choice' %}
+                        <span class="type-tag type-SINGLE_CHOICE">Single choice</span>
+                    {% elif question.question_type == 'multiple_choice' %}
+                        <span class="type-tag type-MULTIPLE_CHOICE">Multiple choice</span>
+                    {% elif question.question_type == 'numerical' %}
+                        <span class="type-tag type-NUMERICAL">Numerical</span>
+                    {% elif question.question_type == 'short_answer' %}
+                        <span class="type-tag type-SHORT_ANSWER">Short answer</span>
+                    {% else %}
+                        <span class="type-tag">{{ question.question_type }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">
+                    <div class="empty-state">
+                        <p>No questions available.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

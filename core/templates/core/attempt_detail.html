@@ -4,143 +4,221 @@
 {% block title %}Attempt {{ attempt.pk }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>{{ attempt.assessment.title }} — Attempt {{ attempt.attempt_number }}</h1>
-    <a href="{% url 'core:attempt-list' %}" class="btn btn-secondary">Back to Attempts</a>
-  </div>
-
-  <div class="card mb-3">
-    <div class="card-body">
-      <p><strong>Status:</strong> {{ attempt.status }}</p>
-      {% if attempt.status == 'in_progress' %}
-        <p><strong>Time remaining:</strong> <span id="countdown" data-deadline="{{ deadline|date:'c' }}">calculating…</span></p>
-      {% else %}
-        <p><strong>Score:</strong> {% if results_visible %}{{ attempt.score|default_if_none:'Pending evaluation' }}{% else %}Not released yet{% endif %}</p>
-        <p><strong>Submitted:</strong> {{ attempt.submitted_at|default:'Not yet submitted' }}</p>
-        <p><strong>Time taken:</strong> {{ attempt.time_taken_seconds|default_if_none:'N/A' }} seconds</p>
-      {% endif %}
+<div class="view-head">
+    <div class="view-eyebrow">
+        {% if attempt.status == 'in_progress' %}In progress{% else %}Review{% endif %}
     </div>
-  </div>
-
-  {% if attempt.status == 'in_progress' %}
-    <div class="alert alert-info">
-      Answer each question below and click "Save answer" — your progress is saved as you go.
-      Submit the whole assessment when you're done, or it will submit automatically when time runs out.
+    <div class="toolbar" style="margin-bottom:0;">
+        <h1 class="view-title" style="margin-bottom:0;">{{ attempt.assessment.title }} — Attempt {{ attempt.attempt_number }}</h1>
+        <a href="{% url 'core:attempt-list' %}" class="btn btn-sm">Back to attempts</a>
     </div>
-    {% for aq in assessment_questions %}
-      <div class="card mb-3" id="q-{{ aq.pk }}">
-        <div class="card-body">
-          <h5>{{ forloop.counter }}. {{ aq.question.title }} <small class="text-muted">({{ aq.marks }} marks)</small></h5>
-          <div class="mb-2">{{ aq.question.statement|linebreaks }}</div>
-          <form method="post" action="{% url 'core:answer-save' attempt.pk aq.pk %}">
-            {% csrf_token %}
-            {% with answer=answers_by_aq|get_item:aq.pk %}
-              {% if aq.question.question_type == 'single_choice' %}
-                {% for choice in aq.question.choices.all %}
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="choice" value="{{ choice.pk }}" id="choice-{{ choice.pk }}"
-                      {% if answer.selected_choice_id == choice.pk %}checked{% endif %}>
-                    <label class="form-check-label" for="choice-{{ choice.pk }}">{{ choice.text }}</label>
-                  </div>
-                {% endfor %}
-              {% elif aq.question.question_type == 'multiple_choice' %}
-                {% for choice in aq.question.choices.all %}
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="choices" value="{{ choice.pk }}" id="choice-{{ choice.pk }}"
-                      {% if choice in answer.selected_choices.all %}checked{% endif %}>
-                    <label class="form-check-label" for="choice-{{ choice.pk }}">{{ choice.text }}</label>
-                  </div>
-                {% endfor %}
-              {% elif aq.question.question_type == 'numerical' %}
-                <input type="number" step="any" class="form-control" name="numeric_answer" value="{{ answer.numeric_answer|default_if_none:'' }}">
-              {% elif aq.question.question_type == 'short_answer' %}
-                <input type="text" class="form-control" name="text_answer" value="{{ answer.text_answer|default_if_none:'' }}">
-              {% elif aq.question.question_type == 'coding' %}
-                <p class="text-muted small">Supported languages: {{ aq.question.supported_languages|join:", " }}. Code is graded manually, not executed.</p>
-                <textarea class="form-control" name="code_answer" rows="8">{{ answer.code_answer|default_if_none:'' }}</textarea>
-              {% endif %}
-            {% endwith %}
-            <button type="submit" class="btn btn-outline-primary btn-sm mt-2">Save answer</button>
-          </form>
-        </div>
-      </div>
-    {% endfor %}
-    <form method="post" action="{% url 'core:attempt-submit' attempt.pk %}" id="submit-form" onsubmit="return confirm('Submit the assessment? You cannot change answers afterwards.');">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-danger">Submit Assessment</button>
-    </form>
-
-  {% else %}
-    <div class="card">
-      <div class="card-body">
-        <h5>Questions &amp; Answers</h5>
-        {% if not results_visible %}
-          <div class="alert alert-secondary">Results have not been released yet for this assessment.</div>
-        {% endif %}
-        <ul class="list-group">
-          {% for aq in assessment_questions %}
-            {% with answer=answers_by_aq|get_item:aq.pk %}
-              <li class="list-group-item" id="q-{{ aq.pk }}">
-                <strong>{{ forloop.counter }}. {{ aq.question.title }}</strong>
-                <div>{{ aq.question.statement|linebreaks }}</div>
-                <p><strong>Your answer:</strong>
-                  {% if not answer %}
-                    Not answered
-                  {% elif answer.selected_choice %}
-                    {{ answer.selected_choice.text }}
-                  {% elif answer.selected_choices.all %}
-                    {{ answer.selected_choices.all|join:", " }}
-                  {% elif answer.numeric_answer %}
-                    {{ answer.numeric_answer }}
-                  {% elif answer.text_answer %}
-                    {{ answer.text_answer }}
-                  {% elif answer.code_answer %}
-                    {{ answer.code_answer }}
-                  {% else %}
-                    Not answered
-                  {% endif %}
-                </p>
-                {% if results_visible %}
-                  {% if answer %}
-                    <p><strong>Correct:</strong> {{ answer.is_correct|yesno:'Yes,No,Pending' }}</p>
-                    <p><strong>Awarded marks:</strong> {{ answer.awarded_marks|default_if_none:'Pending' }}</p>
-                    {% if answer.feedback %}<p><strong>Feedback:</strong> {{ answer.feedback }}</p>{% endif %}
-                  {% else %}
-                    <p><strong>Correct:</strong> No — not answered</p>
-                    <p><strong>Awarded marks:</strong> 0</p>
-                  {% endif %}
-                  {% if explanations_visible and aq.question.explanation %}
-                    <p><strong>Explanation:</strong> {{ aq.question.explanation|linebreaks }}</p>
-                  {% endif %}
-                {% endif %}
-                {% if answer and can_grade and aq.question.question_type == 'coding' and answer.is_correct is None %}
-                  <div class="border-top pt-2 mt-2">
-                    <p class="text-muted small mb-1">Manual grading (submitted code shown above):</p>
-                    <div class="row g-2">
-                      <div class="col-auto">
-                        <input type="number" step="any" class="form-control form-control-sm" name="marks_{{ answer.pk }}" form="grade-form" placeholder="Marks">
-                      </div>
-                      <div class="col">
-                        <input type="text" class="form-control form-control-sm" name="feedback_{{ answer.pk }}" form="grade-form" placeholder="Feedback">
-                      </div>
-                    </div>
-                  </div>
-                {% endif %}
-              </li>
-            {% endwith %}
-          {% endfor %}
-        </ul>
-        {% if can_grade %}
-          <form method="post" action="{% url 'core:attempt-grade' attempt.pk %}" id="grade-form" class="mt-3">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary">Save Grades</button>
-          </form>
-        {% endif %}
-      </div>
-    </div>
-  {% endif %}
 </div>
+
+<div class="panel" style="margin-bottom:22px;">
+    {% if attempt.status == 'in_progress' %}
+        <div class="kv-grid" style="grid-template-columns:repeat(2,1fr);">
+            <div>
+                <div class="kv-label">Status</div>
+                <div class="kv-value"><span class="pill pill-blue">In progress</span></div>
+            </div>
+            <div>
+                <div class="kv-label">Time remaining</div>
+                <div class="kv-value" style="font-family:var(--mono);">
+                    <span id="countdown" data-deadline="{{ deadline|date:'c' }}">calculating…</span>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="kv-grid" style="grid-template-columns:repeat(4,1fr);">
+            <div>
+                <div class="kv-label">Status</div>
+                <div class="kv-value">
+                    {% if attempt.status == 'submitted' %}
+                        <span class="pill pill-amber">Submitted</span>
+                    {% elif attempt.status == 'graded' %}
+                        <span class="pill pill-green">Graded</span>
+                    {% else %}
+                        <span class="pill pill-gray">{{ attempt.status }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <div class="kv-label">Score</div>
+                <div class="kv-value" style="font-family:var(--mono);">
+                    {% if results_visible %}{{ attempt.score|default_if_none:'Pending' }}{% else %}Not released{% endif %}
+                </div>
+            </div>
+            <div>
+                <div class="kv-label">Submitted</div>
+                <div class="kv-value">{{ attempt.submitted_at|default:'Not yet submitted' }}</div>
+            </div>
+            <div>
+                <div class="kv-label">Time taken</div>
+                <div class="kv-value" style="font-family:var(--mono);">{{ attempt.time_taken_seconds|default_if_none:'N/A' }}s</div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if attempt.status == 'in_progress' %}
+
+    <div class="status-line" style="margin-bottom:18px;">
+        Answer each question and click "Save answer" — your progress is saved as you go. Submit the whole assessment when you're done, or it submits automatically when time runs out.
+    </div>
+
+    <div class="console" style="grid-template-columns:200px 1fr;min-height:0;">
+        <div class="console-col qpalette">
+            <div class="qpalette-title">Questions</div>
+            <div class="qgrid">
+                {% for aq in assessment_questions %}
+                    {% with answer=answers_by_aq|get_item:aq.pk %}
+                        <a href="#q-{{ aq.pk }}" class="qbtn {% if answer %}answered{% endif %}">{{ forloop.counter }}</a>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+            <div class="legend">
+                <div class="legend-item"><span class="legend-swatch" style="background:var(--accent-soft);border:1px solid var(--accent-line);"></span>Answered</div>
+                <div class="legend-item"><span class="legend-swatch" style="background:var(--panel-alt);border:1px solid var(--border);"></span>Unanswered</div>
+            </div>
+        </div>
+
+        <div class="console-col" style="padding:22px 26px;display:flex;flex-direction:column;gap:16px;">
+            {% for aq in assessment_questions %}
+                <div class="panel" id="q-{{ aq.pk }}">
+                    <div class="qmain-head" style="margin-bottom:12px;">
+                        <div class="panel-title" style="margin-bottom:0;">{{ forloop.counter }}. {{ aq.question.title }}</div>
+                        <div class="qmain-marks">{{ aq.marks }} marks</div>
+                    </div>
+                    <div class="qmain-body" style="margin-bottom:14px;">{{ aq.question.statement|linebreaks }}</div>
+
+                    <form method="post" action="{% url 'core:answer-save' attempt.pk aq.pk %}">
+                        {% csrf_token %}
+                        {% with answer=answers_by_aq|get_item:aq.pk %}
+                            {% if aq.question.question_type == 'single_choice' %}
+                                {% for choice in aq.question.choices.all %}
+                                    <label class="option-row">
+                                        <input type="radio" name="choice" value="{{ choice.pk }}" id="choice-{{ choice.pk }}"
+                                            {% if answer.selected_choice_id == choice.pk %}checked{% endif %}>
+                                        <span>{{ choice.text }}</span>
+                                    </label>
+                                {% endfor %}
+                            {% elif aq.question.question_type == 'multiple_choice' %}
+                                {% for choice in aq.question.choices.all %}
+                                    <label class="option-row">
+                                        <input type="checkbox" name="choices" value="{{ choice.pk }}" id="choice-{{ choice.pk }}"
+                                            {% if choice in answer.selected_choices.all %}checked{% endif %}>
+                                        <span>{{ choice.text }}</span>
+                                    </label>
+                                {% endfor %}
+                            {% elif aq.question.question_type == 'numerical' %}
+                                <input type="number" step="any" class="input" name="numeric_answer" value="{{ answer.numeric_answer|default_if_none:'' }}">
+                            {% elif aq.question.question_type == 'short_answer' %}
+                                <input type="text" class="input" name="text_answer" value="{{ answer.text_answer|default_if_none:'' }}">
+                            {% elif aq.question.question_type == 'coding' %}
+                                <div class="hint" style="margin-bottom:8px;">Supported languages: {{ aq.question.supported_languages|join:", " }}. Code is graded manually, not executed.</div>
+                                <textarea class="input code-input" name="code_answer" rows="8">{{ answer.code_answer|default_if_none:'' }}</textarea>
+                            {% endif %}
+                        {% endwith %}
+                        <button type="submit" class="btn btn-sm" style="margin-top:12px;">Save answer</button>
+                    </form>
+                </div>
+            {% endfor %}
+
+            <form method="post" action="{% url 'core:attempt-submit' attempt.pk %}" id="submit-form" onsubmit="return confirm('Submit the assessment? You cannot change answers afterwards.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Submit assessment</button>
+            </form>
+        </div>
+    </div>
+
+{% else %}
+
+    <div class="panel-title" style="margin-bottom:14px;">Questions &amp; answers</div>
+    {% if not results_visible %}
+        <div class="status-line" style="margin-bottom:16px;">Results have not been released yet for this assessment.</div>
+    {% endif %}
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+        {% for aq in assessment_questions %}
+            {% with answer=answers_by_aq|get_item:aq.pk %}
+                <div class="panel" id="q-{{ aq.pk }}">
+                    <div class="panel-title" style="margin-bottom:10px;">{{ forloop.counter }}. {{ aq.question.title }}</div>
+                    <div class="qmain-body" style="margin-bottom:14px;">{{ aq.question.statement|linebreaks }}</div>
+
+                    <div class="kv-label" style="margin-bottom:6px;">Your answer</div>
+                    <div class="qmain-body" style="margin-bottom:14px;">
+                        {% if not answer %}
+                            <span class="pill pill-gray">Not answered</span>
+                        {% elif answer.selected_choice %}
+                            {{ answer.selected_choice.text }}
+                        {% elif answer.selected_choices.all %}
+                            {{ answer.selected_choices.all|join:", " }}
+                        {% elif answer.numeric_answer %}
+                            {{ answer.numeric_answer }}
+                        {% elif answer.text_answer %}
+                            {{ answer.text_answer }}
+                        {% elif answer.code_answer %}
+                            <div class="code-box">{{ answer.code_answer }}</div>
+                        {% else %}
+                            <span class="pill pill-gray">Not answered</span>
+                        {% endif %}
+                    </div>
+
+                    {% if results_visible %}
+                        <div class="kv-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px;">
+                            <div>
+                                <div class="kv-label">Correct</div>
+                                <div class="kv-value">
+                                    {% if not answer %}
+                                        <span class="pill pill-red">No — not answered</span>
+                                    {% elif answer.is_correct %}
+                                        <span class="pill pill-green">Yes</span>
+                                    {% elif answer.is_correct is None %}
+                                        <span class="pill pill-amber">Pending</span>
+                                    {% else %}
+                                        <span class="pill pill-red">No</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                <div class="kv-label">Awarded marks</div>
+                                <div class="kv-value" style="font-family:var(--mono);">
+                                    {% if not answer %}0{% else %}{{ answer.awarded_marks|default_if_none:'Pending' }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% if answer.feedback %}
+                            <div class="kv-label" style="margin-bottom:6px;">Feedback</div>
+                            <div class="qmain-body" style="margin-bottom:10px;">{{ answer.feedback }}</div>
+                        {% endif %}
+                        {% if explanations_visible and aq.question.explanation %}
+                            <div class="kv-label" style="margin-bottom:6px;">Explanation</div>
+                            <div class="qmain-body">{{ aq.question.explanation|linebreaks }}</div>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if answer and can_grade and aq.question.question_type == 'coding' and answer.is_correct is None %}
+                        <div style="border-top:1px solid var(--border-soft);margin-top:14px;padding-top:14px;">
+                            <div class="hint" style="margin-bottom:8px;">Manual grading (submitted code shown above)</div>
+                            <div style="display:flex;gap:10px;">
+                                <input type="number" step="any" class="input" style="max-width:110px;" name="marks_{{ answer.pk }}" form="grade-form" placeholder="Marks">
+                                <input type="text" class="input" name="feedback_{{ answer.pk }}" form="grade-form" placeholder="Feedback">
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endwith %}
+        {% endfor %}
+    </div>
+
+    {% if can_grade %}
+        <form method="post" action="{% url 'core:attempt-grade' attempt.pk %}" id="grade-form" style="margin-top:18px;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-accent">Save grades</button>
+        </form>
+    {% endif %}
+
+{% endif %}
 
 {% if attempt.status == 'in_progress' %}
 <script>

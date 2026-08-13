@@ -3,54 +3,147 @@
 {% block title %}Question {{ question.title }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1>{{ question.title }}</h1>
-  <div class="btn-group" role="group">
-    <a href="{% url 'core:question-update' question.pk %}" class="btn btn-outline-secondary">Edit Question</a>
-    <a href="{% url 'core:question-create' %}" class="btn btn-secondary">New Question</a>
-  </div>
+<div class="view-head">
+    <div class="view-eyebrow">Question bank</div>
+    <div class="toolbar" style="margin-bottom:0;">
+        <h1 class="view-title" style="margin-bottom:0;">{{ question.title }}</h1>
+        <div style="display:flex;gap:8px;">
+            <a href="{% url 'core:question-update' question.pk %}" class="btn btn-accent">Edit question</a>
+            <a href="{% url 'core:question-create' %}" class="btn">New question</a>
+        </div>
+    </div>
 </div>
-<div class="card">
-  <div class="card-body">
-    <p><strong>Type:</strong> {{ question.question_type }}</p>
-    <p><strong>Topic:</strong> {{ question.topic }}</p>
-    <p><strong>Difficulty:</strong> {{ question.difficulty }}</p>
-    <p><strong>Tags:</strong> {{ question.tags|join:", " }}</p>
-    <p><strong>Approval Status:</strong> {{ question.approval_status }}</p>
-    <hr>
-    <div>{{ question.statement|linebreaks }}</div>
-    {% if question.question_type == 'coding' %}
-      <hr>
-      <h5>Coding Details</h5>
-      <p><strong>Input Format:</strong> {{ question.input_format|default:'N/A' }}</p>
-      <p><strong>Output Format:</strong> {{ question.output_format|default:'N/A' }}</p>
-      <p><strong>Constraints:</strong> {{ question.constraints|default:'N/A' }}</p>
-      <p><strong>Example:</strong> {{ question.example|default:'N/A' }}</p>
-      <p><strong>Supported Languages:</strong> {{ question.supported_languages|join:", " }}</p>
-    {% endif %}
-    {% if choices %}
-      <hr>
-      <h5>Choices</h5>
-      <ul>
-        {% for choice in choices %}
-          <li>{{ choice.text }}{% if choice.is_correct %} (correct){% endif %}</li>
+
+<div class="panel" style="margin-bottom:22px;">
+    <div class="kv-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+        <div>
+            <div class="kv-label">Type</div>
+            <div class="kv-value">
+                {% if question.question_type == 'coding' %}
+                    <span class="type-tag type-CODING">Coding</span>
+                {% elif question.question_type == 'single_choice' %}
+                    <span class="type-tag type-SINGLE_CHOICE">Single choice</span>
+                {% elif question.question_type == 'multiple_choice' %}
+                    <span class="type-tag type-MULTIPLE_CHOICE">Multiple choice</span>
+                {% elif question.question_type == 'numerical' %}
+                    <span class="type-tag type-NUMERICAL">Numerical</span>
+                {% elif question.question_type == 'short_answer' %}
+                    <span class="type-tag type-SHORT_ANSWER">Short answer</span>
+                {% else %}
+                    <span class="type-tag">{{ question.question_type }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div class="kv-label">Topic</div>
+            <div class="kv-value">{{ question.topic }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Difficulty</div>
+            <div class="kv-value">
+                {% if question.difficulty == 'easy' %}
+                    <span class="pill pill-green">Easy</span>
+                {% elif question.difficulty == 'medium' %}
+                    <span class="pill pill-amber">Medium</span>
+                {% elif question.difficulty == 'hard' %}
+                    <span class="pill pill-red">Hard</span>
+                {% else %}
+                    <span class="pill pill-gray">{{ question.difficulty }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div class="kv-label">Approval status</div>
+            <div class="kv-value">
+                {% if question.approval_status == 'approved' %}
+                    <span class="pill pill-green">Approved</span>
+                {% elif question.approval_status == 'pending' %}
+                    <span class="pill pill-amber">Pending review</span>
+                {% elif question.approval_status == 'rejected' %}
+                    <span class="pill pill-red">Rejected</span>
+                {% else %}
+                    <span class="pill pill-gray">{{ question.approval_status }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="kv-label" style="margin-bottom:8px;">Tags</div>
+    <div style="margin-bottom:20px;">
+        {% for tag in question.tags %}
+            <span class="pill pill-gray" style="margin-right:6px;">{{ tag }}</span>
+        {% empty %}
+            <span class="hint">No tags</span>
         {% endfor %}
-      </ul>
-    {% endif %}
-    {% if coding_test_cases %}
-      <hr>
-      <h5>Coding Test Cases</h5>
-      <ul>
+    </div>
+
+    <div class="kv-label" style="margin-bottom:8px;">Statement</div>
+    <div class="qmain-body">{{ question.statement|linebreaks }}</div>
+</div>
+
+{% if question.question_type == 'coding' %}
+<div class="panel" style="margin-bottom:22px;">
+    <div class="panel-title">Coding details</div>
+    <div class="kv-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:16px;">
+        <div>
+            <div class="kv-label">Input format</div>
+            <div class="kv-value">{{ question.input_format|default:'N/A' }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Output format</div>
+            <div class="kv-value">{{ question.output_format|default:'N/A' }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Constraints</div>
+            <div class="kv-value">{{ question.constraints|default:'N/A' }}</div>
+        </div>
+        <div>
+            <div class="kv-label">Supported languages</div>
+            <div class="kv-value">{{ question.supported_languages|join:", " }}</div>
+        </div>
+    </div>
+    <div class="kv-label" style="margin-bottom:8px;">Example</div>
+    <div class="code-box">{{ question.example|default:'N/A' }}</div>
+</div>
+{% endif %}
+
+{% if choices %}
+<div class="panel" style="margin-bottom:22px;">
+    <div class="panel-title">Choices</div>
+    {% for choice in choices %}
+        <label class="option-row">
+            {% if choice.is_correct %}
+                <span class="pill pill-green" style="margin-right:2px;">Correct</span>
+            {% else %}
+                <span class="pill pill-gray" style="margin-right:2px;">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            {% endif %}
+            <span>{{ choice.text }}</span>
+        </label>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if coding_test_cases %}
+<div class="panel" style="margin-bottom:22px;">
+    <div class="panel-title">Coding test cases</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
         {% for case in coding_test_cases %}
-          <li>Input: {{ case.input_data }} | Expected: {{ case.expected_output }} | Points: {{ case.points }}</li>
+            <div class="testcase">
+                <div class="testcase-head">
+                    <span class="testcase-name">Case {{ forloop.counter }}</span>
+                    <span class="tc-pending">{{ case.points }} pts</span>
+                </div>
+                <div class="testcase-io"><b>input</b> {{ case.input_data }} &nbsp; <b>expected</b> {{ case.expected_output }}</div>
+            </div>
         {% endfor %}
-      </ul>
-    {% endif %}
-    {% if question.explanation %}
-      <hr>
-      <h5>Explanation</h5>
-      <div>{{ question.explanation|linebreaks }}</div>
-    {% endif %}
-  </div>
+    </div>
 </div>
+{% endif %}
+
+{% if question.explanation %}
+<div class="panel">
+    <div class="panel-title">Explanation</div>
+    <div class="qmain-body">{{ question.explanation|linebreaks }}</div>
+</div>
+{% endif %}
 {% endblock %}

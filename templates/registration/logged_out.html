@@ -3,6 +3,13 @@
 {% block title %}Logged out{% endblock %}
 
 {% block content %}
-  <h2>Logged out</h2>
-  <p>You have been logged out successfully. <a href="{% url 'login' %}">Log in again</a>.</p>
+<div style="display:flex;justify-content:center;padding-top:60px;">
+    <div class="panel" style="width:100%;max-width:380px;text-align:center;">
+        <div class="view-eyebrow">Session ended</div>
+        <h1 class="view-title" style="margin-bottom:10px;">Logged out</h1>
+        <p class="qmain-body" style="margin-bottom:0;">
+            You have been logged out successfully. <a href="{% url 'login' %}" style="color:var(--accent);">Log in again</a>.
+        </p>
+    </div>
+</div>
 {% endblock %}

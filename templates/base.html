@@ -4,39 +4,248 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PlacePrep Hub{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ENjdO4Dr2bkBIFxQpeoaj2gc4mXUp8rZBSy5DQ3v+zB7H2Kz66L+2mA0pP5aE3dF" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg:#0b0e14;
+            --panel:#11151c;
+            --panel-alt:#161b24;
+            --border:#232838;
+            --border-soft:#1b202c;
+            --text:#e8ecf5;
+            --text-dim:#8892a6;
+            --text-faint:#5b6478;
+            --accent:#4fd1a5;
+            --accent-soft:rgba(79,209,165,0.12);
+            --accent-line:rgba(79,209,165,0.35);
+            --blue:#6ea8fe;
+            --blue-soft:rgba(110,168,254,0.12);
+            --amber:#e3b341;
+            --amber-soft:rgba(227,179,65,0.12);
+            --red:#f47067;
+            --red-soft:rgba(244,112,103,0.12);
+            --mono:'JetBrains Mono','Courier New',monospace;
+            --sans:'Inter',-apple-system,sans-serif;
+        }
+        *{box-sizing:border-box;}
+        html,body{margin:0;padding:0;}
+        body{
+            background:var(--bg); color:var(--text); font-family:var(--sans);
+            font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+        }
+        a{color:inherit;text-decoration:none;}
+        button{font-family:inherit;cursor:pointer;}
+
+        /* Shell */
+        .shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh;}
+        .sidebar{background:var(--panel);border-right:1px solid var(--border);padding:22px 14px;display:flex;flex-direction:column;gap:26px;}
+        .brand{display:flex;align-items:center;gap:9px;padding:0 8px;}
+        .brand-mark{width:26px;height:26px;border-radius:6px;background:var(--accent-soft);border:1px solid var(--accent-line);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:13px;color:var(--accent);}
+        .brand-name{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:0.02em;}
+        .brand-name span{color:var(--accent);}
+        .nav-group-label{font-family:var(--mono);font-size:10px;letter-spacing:0.12em;color:var(--text-faint);text-transform:uppercase;padding:0 10px;margin-bottom:6px;}
+        .nav{display:flex;flex-direction:column;gap:2px;}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;color:var(--text-dim);font-size:13px;font-weight:500;border:1px solid transparent;}
+        .nav-item .n{font-family:var(--mono);font-size:11px;color:var(--text-faint);width:16px;}
+        .nav-item:hover{background:var(--panel-alt);color:var(--text);}
+        .nav-item.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line);}
+        .nav-item.active .n{color:var(--accent);}
+        .sidebar-foot{margin-top:auto;border-top:1px solid var(--border-soft);padding-top:14px;font-family:var(--mono);font-size:11px;color:var(--text-faint);}
+
+        .main{display:flex;flex-direction:column;min-width:0;}
+        .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--bg);}
+        .topbar-title{font-family:var(--mono);font-size:13px;color:var(--text-dim);}
+        .topbar-title b{color:var(--text);font-weight:600;}
+        .role-pill{display:flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--panel);padding:6px 12px;border-radius:20px;font-size:12px;color:var(--text-dim);}
+        .role-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+        .role-pill a{color:var(--text-faint);}
+        .role-pill a:hover{color:var(--text);}
+
+        .view{padding:26px 28px 60px;}
+
+        .view-head{margin-bottom:22px;}
+        .view-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:0.1em;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
+        .view-title{font-size:22px;font-weight:700;margin:0 0 4px;}
+        .view-sub{color:var(--text-dim);font-size:13px;}
+
+        /* Stats */
+        .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px;}
+        .stat-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+        .stat-label{font-family:var(--mono);font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
+        .stat-value{font-family:var(--mono);font-size:28px;font-weight:700;}
+        .stat-delta{font-size:11px;color:var(--accent);margin-top:6px;}
+
+        .panel-row{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;}
+        .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+        .panel-title{font-size:13px;font-weight:600;margin:0 0 14px;display:flex;justify-content:space-between;align-items:center;}
+        .panel-title .tag{font-family:var(--mono);font-size:10px;color:var(--text-faint);font-weight:400;}
+
+        /* Pills / tags */
+        .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:20px;letter-spacing:0.03em;text-transform:uppercase;border:1px solid transparent;white-space:nowrap;}
+        .pill-green{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line);}
+        .pill-blue{background:var(--blue-soft);color:var(--blue);border-color:rgba(110,168,254,0.35);}
+        .pill-amber{background:var(--amber-soft);color:var(--amber);border-color:rgba(227,179,65,0.35);}
+        .pill-red{background:var(--red-soft);color:var(--red);border-color:rgba(244,112,103,0.35);}
+        .pill-gray{background:var(--panel-alt);color:var(--text-dim);border-color:var(--border);}
+
+        .type-tag{font-family:var(--mono);font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:5px;border:1px solid var(--border);color:var(--text-dim);}
+        .type-CODING{color:#c297ff;border-color:rgba(194,151,255,0.35);background:rgba(194,151,255,0.08);}
+        .type-SINGLE_CHOICE{color:var(--blue);border-color:rgba(110,168,254,0.35);background:var(--blue-soft);}
+        .type-MULTIPLE_CHOICE{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft);}
+        .type-NUMERICAL{color:var(--amber);border-color:rgba(227,179,65,0.35);background:var(--amber-soft);}
+        .type-SHORT_ANSWER{color:var(--text-dim);border-color:var(--border);background:var(--panel-alt);}
+
+        /* Tables */
+        table{width:100%;border-collapse:collapse;}
+        thead th{text-align:left;font-family:var(--mono);font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;padding:0 14px 10px;border-bottom:1px solid var(--border);}
+        tbody td{padding:13px 14px;border-bottom:1px solid var(--border-soft);font-size:13px;vertical-align:middle;}
+        tbody tr:last-child td{border-bottom:none;}
+        tbody tr.clickable:hover{background:var(--panel-alt);cursor:pointer;}
+        .cell-main{font-weight:600;}
+        .cell-sub{color:var(--text-faint);font-size:11.5px;font-family:var(--mono);margin-top:2px;}
+        .table-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+        .table-wrap table thead th:first-child, .table-wrap table tbody td:first-child{padding-left:18px;}
+        .table-wrap table thead th:last-child, .table-wrap table tbody td:last-child{padding-right:18px;}
+
+        .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap;}
+        .filter-tabs{display:flex;gap:6px;}
+        .filter-tab{font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);color:var(--text-dim);background:var(--panel);}
+        .filter-tab.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line);}
+        .btn{font-size:12.5px;font-weight:600;padding:8px 15px;border-radius:6px;border:1px solid var(--border);background:var(--panel-alt);color:var(--text);}
+        .btn:hover{border-color:var(--text-faint);}
+        .btn-accent{background:var(--accent);color:#06120e;border-color:var(--accent);}
+        .btn-accent:hover{opacity:0.9;}
+        .btn-danger{background:var(--red-soft);color:var(--red);border-color:rgba(244,112,103,0.35);}
+        .btn-danger:hover{background:var(--red);color:#1a0a09;}
+        .btn-ghost{background:transparent;}
+        .btn-sm{padding:5px 11px;font-size:11.5px;}
+
+        .empty-state{text-align:center;padding:40px 0;color:var(--text-faint);font-size:13px;}
+
+        /* Detail / kv */
+        .detail{margin-top:16px;background:var(--panel);border:1px solid var(--accent-line);border-radius:10px;padding:20px 22px;display:none;}
+        .detail.open{display:block;}
+        .detail-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+        .detail-close{color:var(--text-faint);font-family:var(--mono);font-size:12px;border:1px solid var(--border);background:var(--panel-alt);border-radius:6px;padding:5px 10px;}
+        .kv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 22px;}
+        .kv-label{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;}
+        .kv-value{font-size:13.5px;}
+
+        /* Forms */
+        .form-block p{margin-bottom:16px;}
+        .form-block label{display:block;font-family:var(--mono);font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+        .form-block input[type="text"], .form-block input[type="number"], .form-block input[type="email"],
+        .form-block input[type="password"], .form-block input[type="date"], .form-block input[type="datetime-local"],
+        .form-block select, .form-block textarea, .input{
+            width:100%;background:var(--panel-alt);border:1px solid var(--border);border-radius:6px;
+            padding:8px 11px;color:var(--text);font-family:var(--sans);font-size:13px;
+        }
+        .form-block input:focus, .form-block select:focus, .form-block textarea:focus, .input:focus{
+            outline:1px solid var(--accent-line);border-color:var(--accent-line);
+        }
+        .form-block .helptext{font-size:11.5px;color:var(--text-faint);margin-top:4px;}
+        .form-block ul.errorlist{list-style:none;margin:4px 0 0;padding:0;color:var(--red);font-size:12px;}
+        .code-input{font-family:var(--mono);background:#080a0f;color:#c9d1d9;resize:vertical;line-height:1.6;}
+        .option-row{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:13.5px;}
+        .hint{font-size:11.5px;color:var(--text-faint);}
+
+        /* Console (attempt-taking) */
+        .console{display:grid;grid-template-columns:200px 1fr 320px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+        .console-col{background:var(--panel);}
+        .console-col + .console-col{border-left:1px solid var(--border);}
+        .qpalette{padding:18px;}
+        .qpalette-title{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;}
+        .qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;}
+        .qbtn{aspect-ratio:1;border-radius:6px;border:1px solid var(--border);background:var(--panel-alt);color:var(--text-dim);font-family:var(--mono);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;}
+        .qbtn.answered{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line);}
+        .qbtn.flagged{background:var(--amber-soft);color:var(--amber);border-color:rgba(227,179,65,0.35);}
+        .qbtn.current{outline:2px solid var(--blue);outline-offset:1px;}
+        .legend{display:flex;flex-direction:column;gap:8px;font-size:11.5px;color:var(--text-dim);}
+        .legend-item{display:flex;align-items:center;gap:8px;}
+        .legend-swatch{width:10px;height:10px;border-radius:3px;}
+        .qmain-head{display:flex;justify-content:space-between;align-items:flex-start;}
+        .qmain-title{font-size:13px;color:var(--text-faint);font-family:var(--mono);}
+        .qmain-body{font-size:15px;line-height:1.65;}
+        .qmain-marks{font-family:var(--mono);font-size:11px;color:var(--text-dim);}
+        .code-box{background:#080a0f;border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:12.5px;color:#c9d1d9;padding:14px 16px;min-height:60px;white-space:pre-wrap;line-height:1.6;}
+        .runpanel{padding:18px 20px;display:flex;flex-direction:column;gap:14px;}
+        .testcase{border:1px solid var(--border);border-radius:7px;padding:10px 12px;font-size:12px;}
+        .testcase-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+        .testcase-name{font-family:var(--mono);color:var(--text-dim);}
+        .tc-pass{color:var(--accent);}
+        .tc-fail{color:var(--red);}
+        .tc-pending{color:var(--text-faint);}
+        .testcase-io{font-family:var(--mono);font-size:11px;color:var(--text-faint);}
+        .testcase-io b{color:var(--text-dim);font-weight:500;}
+        .status-line{font-family:var(--mono);font-size:12px;padding:9px 12px;border-radius:6px;background:var(--panel-alt);border:1px solid var(--border);color:var(--text-dim);}
+        .status-line.pass{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);}
+        .status-line.fail{background:var(--red-soft);border-color:rgba(244,112,103,0.35);color:var(--red);}
+
+        @media (max-width:1000px){
+            .shell{grid-template-columns:1fr;}
+            .sidebar{display:none;}
+            .stat-grid{grid-template-columns:repeat(2,1fr);}
+            .panel-row{grid-template-columns:1fr;}
+            .console{grid-template-columns:1fr;}
+            .kv-grid{grid-template-columns:repeat(2,1fr);}
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">PlacePrep Hub</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'core:dashboard' %}">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'core:cohort-list' %}">Cohorts</a></li>
-                    {% if nav_can_author_content %}
-                      <li class="nav-item"><a class="nav-link" href="{% url 'core:question-list' %}">Questions</a></li>
-                    {% endif %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'core:assessment-list' %}">Assessments</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'core:attempt-list' %}">Attempts</a></li>
-                </ul>
-                <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item"><span class="nav-link">{{ user.username }}</span></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
-                    {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-                    {% endif %}
-                </ul>
+
+<div class="shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">P</div>
+            <div class="brand-name">place<span>prep</span></div>
+        </div>
+
+        <div>
+            <div class="nav-group-label">Workspace</div>
+            <nav class="nav">
+                {% url 'core:dashboard' as dashboard_url %}
+                <a class="nav-item{% if request.path == dashboard_url %} active{% endif %}" href="{{ dashboard_url }}"><span class="n">01</span>Dashboard</a>
+                {% url 'core:cohort-list' as cohort_list_url %}
+                <a class="nav-item{% if request.path == cohort_list_url %} active{% endif %}" href="{{ cohort_list_url }}"><span class="n">02</span>Cohorts</a>
+                {% if nav_can_author_content %}
+                    {% url 'core:question-list' as question_list_url %}
+                    <a class="nav-item{% if request.path == question_list_url %} active{% endif %}" href="{{ question_list_url }}"><span class="n">03</span>Question bank</a>
+                {% endif %}
+                {% url 'core:assessment-list' as assessment_list_url %}
+                <a class="nav-item{% if request.path == assessment_list_url %} active{% endif %}" href="{{ assessment_list_url }}"><span class="n">04</span>Assessments</a>
+                {% url 'core:attempt-list' as attempt_list_url %}
+                <a class="nav-item{% if request.path == attempt_list_url %} active{% endif %}" href="{{ attempt_list_url }}"><span class="n">05</span>Attempts</a>
+            </nav>
+        </div>
+
+        <div class="sidebar-foot">placeprep hub</div>
+    </aside>
+
+    <div class="main">
+        <div class="topbar">
+            <div class="topbar-title">placeprep / <b>{{ request.resolver_match.url_name|default:"" }}</b></div>
+            <div class="role-pill">
+                <span class="dot"></span>
+                {% if user.is_authenticated %}
+                    {{ user.username }}
+                    <a href="{% url 'logout' %}">Logout</a>
+                {% else %}
+                    <a href="{% url 'login' %}">Login</a>
+                {% endif %}
             </div>
         </div>
-    </nav>
-    <main class="container py-4">
-        {% block content %}{% endblock %}
-    </main>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoaj2gc4mXUp8rZBSy5DQ3v+zB7H2Kz66L+2mA0pP5aE3dF" crossorigin="anonymous"></script>
+
+        <main class="view">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('tr.clickable[data-href]').forEach(function(row){
+    row.addEventListener('click', function(){ window.location = row.dataset.href; });
+});
+</script>
 </body>
 </html>
