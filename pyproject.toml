@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Placement training platform for cohort-based aptitude and coding assessments."
 readme = "PLACEMENT_TRAINING_PLATFORM_COPILOT.md"
 requires-python = ">=3.12"
+
 dependencies = [
   "Django>=5.0,<6.0",
   "djangorestframework>=3.15",
@@ -30,6 +31,10 @@ development = [
 [build-system]
 requires = ["setuptools>=65.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["core*", "placeprep*"]
+exclude = ["api*", "templates*"]
 
 [tool.black]
 line-length = 88
