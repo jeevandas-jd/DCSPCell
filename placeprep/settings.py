@@ -35,6 +35,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "testserver",
     "jeevandasjd.pythonanywhere.com",
+    "dcspcell.pythonanywhere.com"
 ]
 
 # Application definition
